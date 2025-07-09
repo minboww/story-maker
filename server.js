@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import path from 'path'; // pathモジュールをインポート
-import { fileURLToPath } from 'url'; // urlモジュールをインポート
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { VertexAI } from '@google-cloud/vertexai';
 
 // --- ES Modulesで __dirname を再現するための設定 ---
@@ -15,11 +15,9 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// ▼▼▼▼▼ この部分が重要 ▼▼▼▼▼
-// 静的ファイル（HTML, CSS, フロントエンドJS）を配信するための設定
-// 'public'というフォルダを作成してそこに入れるのが一般的ですが、
-// 今回はルートディレクトリをそのまま配信します。
-app.use(express.static(path.join(__dirname, '/')));
+// ▼▼▼▼▼ この部分を修正 ▼▼▼▼▼
+// 静的ファイル（HTMLなど）が 'public' フォルダにあることをExpressに教える
+app.use(express.static(path.join(__dirname, 'public')));
 // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 // --- Google Cloud Vertex AI の設定 ---
@@ -31,10 +29,9 @@ const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.5-flash-
 const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagegeneration@0.0.2' });
 
 // --- APIエンドポイント ---
+// (APIエンドポイントのロジックは変更なし)
 
-// テキスト生成用のエンドポイント (パスの先頭に '/api' を付けると管理しやすい)
 app.post('/api/generate-text', async (req, res) => {
-    // (内部のロジックは変更なし)
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'prompt は必須です。' });
     try {
@@ -52,16 +49,27 @@ app.post('/api/generate-text', async (req, res) => {
     }
 });
 
-// 画像生成用のエンドポイント (同様に '/api' を付ける)
 app.post('/api/generate-image', async (req, res) => {
-    // (内部のロジックは変更なし)
     const { storyHistory, theme } = req.body;
     if (!storyHistory || !theme) return res.status(400).json({ error: 'storyHistory と theme は必須です。' });
     try {
-        // (プロンプト生成と画像生成のロジック)
-        const geminiResponse = await generativeModel.generateContent(/* ... */);
+        const promptForImagePrompt = `
+            # Role: あなたは画像生成AIを操るプロの「プロンプトエンジニア」です。
+            # Task: 以下の物語を読み、その情景や感情を最もよく表現する「表紙画像」を生成するための、非常に詳細で芸術的な指示文（プロンプト）を英語で生成してください。
+            # Constraints: 
+            - プロンプトは必ず英語にしてください。
+            - 物語の主要な被写体、雰囲気、画風（例: oil painting, photorealistic, anime style）、色彩、光の当たり方などを具体的に含めてください。
+            - 物語のテーマである「${theme}」の雰囲気を強く反映させてください。
+            # Story:
+            ${storyHistory.join('\n')}
+            # Output (英語のプロンプトのみ):
+        `;
+        const geminiResponse = await generativeModel.generateContent(promptForImagePrompt);
         const imagePrompt = geminiResponse.response.candidates[0].content.parts[0].text.trim();
-        const imageResponse = await generativeVisionModel.generateContent({/* ... */});
+        const imageResponse = await generativeVisionModel.generateContent({
+            contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
+            generationConfig: { "number_of_images": 1 }
+        });
         const imageBase64 = imageResponse.response.candidates[0].content.parts[0].fileData.data;
         res.status(200).json({ imageBase64: imageBase64 });
     } catch (error) {
@@ -70,10 +78,12 @@ app.post('/api/generate-image', async (req, res) => {
     }
 });
 
-// ★★★ どのルートにも一致しない場合、index.htmlを返す (SPA対応) ★★★
+// ▼▼▼ この部分も修正 ▼▼▼
+// どのAPIルートにも一致しない場合、'public'フォルダ内のindex.htmlを返す
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
+// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 app.listen(PORT, () => {
     console.log(`サーバーがポート ${PORT} で起動しました。`);
