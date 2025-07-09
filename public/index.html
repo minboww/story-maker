@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>起承転結 物語メーカー</title>
+    <title>物語メーカー</title>
     <style>
-        /* 使用する可能性のあるフォントを全て読み込む */
         @import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Sawarabi+Gothic&family=Sawarabi+Mincho&family=Shippori+Mincho:wght@400;700&family=Yuji+Syuku&display=swap');
         
         :root {
@@ -35,15 +34,50 @@
             transition: background-color 1.5s ease, color 1.5s ease;
         }
         .container { 
+            position: relative; /* 子要素の絶対配置のため */
             text-align: center; 
             background: var(--container-bg-color); 
-            padding: 30px 40px; 
+            padding: 40px; 
             border-radius: 12px; 
             box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
             max-width: 600px; 
             width: 100%; 
             transition: all 1.5s ease; 
         }
+        
+        /* ▼▼▼ サイトタイトルと起承転結表示のスタイルを追加 ▼▼▼ */
+        #site-title {
+            position: absolute;
+            top: 18px;
+            left: 25px;
+            font-size: 0.9em;
+            color: #aaa;
+            font-weight: 400;
+        }
+        #act-display { 
+            font-size: 1.2em; 
+            color: #888; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid #555; 
+            padding-bottom: 15px; 
+            font-weight: bold; 
+            letter-spacing: 0.7em;
+            text-align: center;
+        }
+        .act-char {
+            display: inline-block;
+            transition: all 0.4s ease;
+            opacity: 0.4;
+            font-size: 0.8em;
+        }
+        .act-char.active {
+            opacity: 1;
+            font-size: 1.2em;
+            color: var(--accent-color);
+            transform: scale(1.2);
+        }
+        /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
+
         #title-display { 
             font-size: 1.5em; 
             font-weight: bold; 
@@ -52,14 +86,6 @@
             display: none; 
             animation: fadeIn 1s forwards;
             transition: color 1.5s ease;
-        }
-        #act-display { 
-            font-size: 1em; 
-            color: #ccc; 
-            margin-bottom: 25px; 
-            border-bottom: 1px solid #555; 
-            padding-bottom: 15px; 
-            font-weight: bold; 
         }
         #story-log { 
             margin-bottom: 30px; 
@@ -70,116 +96,28 @@
             min-height: 100px;
             transition: border-color 1.5s ease;
         }
-        #story-log p { 
-            margin: 0 0 1em 0; 
-            opacity: 0; 
-            animation: fadeIn 0.8s forwards; 
-        }
-        #story-log p:last-child { 
-            font-weight: bold; 
-            color: var(--bold-text-color); 
-            transition: color 1.5s ease; 
-        }
-        .option-btn { 
-            background: var(--btn-bg-color); 
-            border: 1px solid var(--btn-border-color); 
-            color: var(--text-color); 
-            border-radius: 8px; 
-            padding: 15px 30px; 
-            font-size: 1.1em; 
-            cursor: pointer; 
-            width: 100%; 
-            font-family: inherit;
-            transition: all 0.3s ease-in-out; 
-        }
-        .option-btn:hover:not(:disabled) { 
-            background-color: var(--btn-hover-bg-color); 
-            border-color: var(--accent-color); 
-            transform: translateY(-2px); 
-        }
-        .option-btn:disabled { 
-            opacity: 0.7; 
-            cursor: not-allowed; 
-        }
-        #user-word-input { 
-            flex-grow: 1; 
-            padding: 15px; 
-            border-radius: 8px; 
-            border: 1px solid var(--input-border-color); 
-            background-color: var(--input-bg-color); 
-            color: var(--text-color); 
-            font-family: inherit;
-            font-size: 1em; 
-            transition: all 1.5s ease;
-        }
-        #user-word-input:focus { 
-            border-color: var(--accent-color); 
-            outline: none; 
-        }
-        #submit-word-btn { 
-            background: var(--accent-color); 
-            color: var(--bg-color); 
-            border: none; 
-            padding: 15px 20px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-family: inherit;
-            font-weight: bold; 
-            font-size: 1em; 
-            transition: all 0.3s ease; 
-            white-space: nowrap; 
-        }
-        #submit-word-btn:hover { 
-            background-color: var(--btn-hover-bg-color); 
-            color: var(--text-color); 
-        }
-        #loading { 
-            display: none; 
-            margin-top: 20px; 
-            font-size: 1.2em; 
-            color: #aaa; 
-        }
-        @keyframes fadeIn { 
-            from { opacity: 0; transform: translateY(10px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
-        #user-input-area { 
-            width: 100%; 
-            animation: fadeIn 0.5s; 
-            display: none; 
-        }
-        #user-input-area > p { 
-            margin-top: 20px; 
-            margin-bottom: 15px; 
-            font-weight: bold; 
-            font-size: 1.1em; 
-        }
-        #recommend-options { 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-        }
-        .input-separator { 
-            margin: 25px 0 15px; 
-            font-size: 1em; 
-            color: #ccc; 
-            font-weight: bold; 
-        }
-        .input-group { 
-            display: flex; 
-            gap: 10px; 
-            margin-top: 10px; 
-        }
-        #end-options-container { 
-            margin-top: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            gap: 15px; 
-        }
+        #story-log p { margin: 0 0 1em 0; opacity: 0; animation: fadeIn 0.8s forwards; }
+        #story-log p:last-child { font-weight: bold; color: var(--bold-text-color); transition: color 1.5s ease; }
+        .option-btn { background: var(--btn-bg-color); border: 1px solid var(--btn-border-color); color: var(--text-color); border-radius: 8px; padding: 15px 30px; font-size: 1.1em; cursor: pointer; width: 100%; font-family: inherit; transition: all 0.3s ease-in-out; }
+        .option-btn:hover:not(:disabled) { background-color: var(--btn-hover-bg-color); border-color: var(--accent-color); transform: translateY(-2px); }
+        .option-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        #user-word-input { flex-grow: 1; padding: 15px; border-radius: 8px; border: 1px solid var(--input-border-color); background-color: var(--input-bg-color); color: var(--text-color); font-family: inherit; font-size: 1em; transition: all 1.5s ease; }
+        #user-word-input:focus { border-color: var(--accent-color); outline: none; }
+        #submit-word-btn { background: var(--accent-color); color: var(--bg-color); border: none; padding: 15px 20px; border-radius: 8px; cursor: pointer; font-family: inherit; font-weight: bold; font-size: 1em; transition: all 0.3s ease; white-space: nowrap; }
+        #submit-word-btn:hover { background-color: var(--btn-hover-bg-color); color: var(--text-color); }
+        #loading { display: none; margin-top: 20px; font-size: 1.2em; color: #aaa; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        #user-input-area { width: 100%; animation: fadeIn 0.5s; display: none; }
+        #user-input-area > p { margin-top: 20px; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
+        #recommend-options { display: flex; flex-direction: column; gap: 15px; }
+        .input-separator { margin: 25px 0 15px; font-size: 1em; color: #ccc; font-weight: bold; }
+        .input-group { display: flex; gap: 10px; margin-top: 10px; }
+        #end-options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
     </style>
 </head>
 <body>
     <div class="container">
+        <div id="site-title">物語メーカー</div>
         <div id="title-display"></div>
         <div id="act-display"></div>
         <div id="story-log"></div>
@@ -207,14 +145,13 @@
         const submitWordBtn = document.getElementById('submit-word-btn');
         const endOptionsContainer = document.getElementById('end-options-container');
 
-        // ▼▼▼ 全てのテーマのマスターリスト ▼▼▼
         const masterThemes = ["日本の現代文学風", "子供向けの心温まるおとぎ話", "ハードボイルドな探偵小説", "宇宙を舞台にしたSF", "甘酸っぱい青春恋愛ストーリー", "壮大なファンタジー叙事詩", "シュールな不条理演劇", "時代小説","複雑な人間関係を描いた人間ドラマ","ホラー小説","ライトノベル","ワクワクする少年向け小説","日常生活を描いた心温まる小説"];
         let selectedTheme = "";
         let storyHistory = [];
         let choiceCount = 0;
         const MAX_RETRIES = 3;
         
-        async function apiCallWithRetry(prompt, retries = MAX_RETRIES) {
+        async function apiCallWithRetry(prompt, retries = MAX_RETRIES) { /* (変更なし) */
             for (let i = 0; i < retries; i++) {
                 try {
                     const response = await fetch('/api/generate-text', {
@@ -235,23 +172,18 @@
             }
         }
         
-        async function updateTheme() {
+        async function updateTheme() { /* (変更なし) */
             try {
                 const response = await fetch('/api/generate-colors', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        storyHistory: storyHistory,
-                        theme: selectedTheme
-                    }),
+                    body: JSON.stringify({ storyHistory: storyHistory, theme: selectedTheme }),
                 });
                 if (!response.ok) {
-                    console.error('テーマ生成に失敗しました。既存のテーマを維持します。');
-                    return; 
+                    console.error('テーマ生成に失敗しました。既存のテーマを維持します。'); return; 
                 }
                 const theme = await response.json();
                 const root = document.documentElement;
-
                 root.style.setProperty('--bg-color', theme.bg);
                 root.style.setProperty('--container-bg-color', theme.container);
                 root.style.setProperty('--text-color', theme.text);
@@ -262,34 +194,37 @@
                 root.style.setProperty('--btn-border-color', theme.btn);
                 root.style.setProperty('--input-bg-color', theme.bg);
                 root.style.setProperty('--input-border-color', theme.btn);
-
-                if (theme.fontFamily) {
-                    document.body.style.fontFamily = theme.fontFamily;
-                }
-            } catch (error) {
-                console.error('テーマの適用中にエラーが発生しました:', error);
-            }
+                if (theme.fontFamily) { document.body.style.fontFamily = theme.fontFamily; }
+            } catch (error) { console.error('テーマの適用中にエラーが発生しました:', error); }
         }
 
-        document.addEventListener('DOMContentLoaded', async () => {
-            // ▼▼▼ 新しいテーマ選択ロジック ▼▼▼
-            let availableThemes = JSON.parse(localStorage.getItem('availableStoryThemes'));
+        // ▼▼▼ 起承転結表示を更新する新しい関数 ▼▼▼
+        function updateActDisplay(activeIndex) { // 0:起, 1:承, 2:転, 3:結, -1:非表示
+            const acts = ['起', '承', '転', '結'];
+            if (activeIndex === -1) {
+                actDisplayElem.style.display = 'none';
+                return;
+            }
+            actDisplayElem.style.display = 'block';
+            let html = acts.map((char, index) => {
+                const className = (index === activeIndex) ? 'act-char active' : 'act-char';
+                return `<span class="${className}">${char}</span>`;
+            }).join('');
+            actDisplayElem.innerHTML = html;
+        }
 
+        document.addEventListener('DOMContentLoaded', async () => { /* (テーマ選択ロジックは変更なし) */
+            let availableThemes = JSON.parse(localStorage.getItem('availableStoryThemes'));
             if (!availableThemes || availableThemes.length === 0) {
-                console.log("利用可能なテーマがなくなったため、リストをリセットします。");
                 availableThemes = [...masterThemes];
             }
-
             const randomIndex = Math.floor(Math.random() * availableThemes.length);
             selectedTheme = availableThemes[randomIndex];
-
             availableThemes.splice(randomIndex, 1);
-
             localStorage.setItem('availableStoryThemes', JSON.stringify(availableThemes));
-            // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
             loadingElem.style.display = 'block';
-            actDisplayElem.textContent = "【起】";
+            updateActDisplay(0); // ★「起」をアクティブに
             loadingElem.textContent = `テーマ「${selectedTheme}」で物語の始まりを考えています...`;
             const initialPrompt = `# 役割: あなたは「${selectedTheme}」の作家です。\n# 指示: 物語の魅力的な「始まりの一文」を一つだけ生成してください。\n# 制約: 回答は必ず {"sentence": "生成された始まりの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 出力:`;
             const data = await apiCallWithRetry(initialPrompt);
@@ -304,7 +239,7 @@
             }
         });
 
-        async function proceedWithWord(word) {
+        async function proceedWithWord(word) { /* (変更なし) */
             document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
             submitWordBtn.disabled = true;
             userWordInput.disabled = true;
@@ -332,30 +267,28 @@
             storyHistory.push(nextSentence);
             addSentenceToLog(nextSentence);
             choiceCount++;
-            if (choiceCount >= 3) { 
-                await generateConclusion(); 
-            } else { 
-                await generateRecommendedWords(); 
-            }
+            if (choiceCount >= 3) { await generateConclusion(); } else { await generateRecommendedWords(); }
         }
 
         async function generateRecommendedWords() {
-            let currentAct = "", roleDescription = "", instruction = "";
-            switch (choiceCount) {
-                case 0: currentAct = "【承】"; roleDescription = `物語を「承」＝発展させる専門家です。`; instruction = `物語をさらに深く、面白く発展させるための、二つの具体的な「物の名前」の単語を提案してください。`; break;
-                case 1: currentAct = "【転】"; roleDescription = `物語に「転」＝劇的な転換点をもたらす専門家です。`; instruction = `これまでの流れを根底から覆すような、衝撃的で、全く予測不可能な展開につながる、二つの完全にランダムな単語を提案してください。`; break;
-                case 2: currentAct = "【結】"; roleDescription = `あなたは物語を「結」＝収束と結論に導く専門家です。`; instruction = `前の文で起きた衝撃的な展開をうまく収め、物語を結末へと向かわせるための、二つの対照的な「抽象的」な単語を提案してください。`; break;
-            }
-            actDisplayElem.textContent = currentAct;
+            // ★ actDisplayElem.textContent の代わりに updateActDisplay を呼び出す
+            updateActDisplay(choiceCount + 1);
+
             loadingElem.textContent = "物語の鍵となる単語を考えています...";
             loadingElem.style.display = 'block';
+            let roleDescription = "", instruction = "";
+            switch (choiceCount) {
+                case 0: roleDescription = `物語を「承」＝発展させる専門家です。`; instruction = `物語をさらに深く、面白く発展させるための、二つの具体的な「物の名前」の単語を提案してください。`; break;
+                case 1: roleDescription = `物語に「転」＝劇的な転換点をもたらす専門家です。`; instruction = `これまでの流れを根底から覆すような、衝撃的で、全く予測不可能な展開につながる、二つの完全にランダムな単語を提案してください。`; break;
+                case 2: roleDescription = `あなたは物語を「結」＝収束と結論に導く専門家です。`; instruction = `前の文で起きた衝撃的な展開をうまく収め、物語を結末へと向かわせるための、二つの対照的な「抽象的」な単語を提案してください。`; break;
+            }
             const prompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする作家です。今回のあなたの役割は、${roleDescription}\n# 指示: ${instruction}\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気に合う単語を選んでください。回答は必ず {"word1": "単語1", "word2": "単語2"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(prompt);
             loadingElem.style.display = 'none';
             if (data) { updateUserInputArea(data); }
         }
 
-        async function generateSentenceFromWord(word) {
+        async function generateSentenceFromWord(word) { /* (変更なし) */
             loadingElem.textContent = `「${word}」から物語を紡いでいます...`;
             let roleDescription = "", instruction = "";
             switch (choiceCount) {
@@ -369,46 +302,35 @@
         }
 
         async function generateConclusion() {
-            actDisplayElem.style.display = 'none';
+            updateActDisplay(-1); // ★ 起承転結表示を消す
             loadingElem.textContent = "物語の結末を考えています...";
             loadingElem.style.display = 'block';
             const finalPrompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする、偉大なフィナーレを創造する作家です。\n# 指示: 以下の「これまでの物語」のすべてを読み、感動的または、衝撃的、あるいは心に残るような、「締めの一文」を生成してください。\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気に合わせてください。回答は必ず {"conclusion_sentence": "締めの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(finalPrompt);
-            if (data && data.conclusion_sentence) { 
-                storyHistory.push(data.conclusion_sentence); 
-                addSentenceToLog(data.conclusion_sentence); 
-            } else { 
-                const errorSentence = "（エラー：物語の締めの一文を生成できませんでした。）"; 
-                storyHistory.push(errorSentence); 
-                addSentenceToLog(errorSentence); 
-            }
-            
+            if (data && data.conclusion_sentence) { storyHistory.push(data.conclusion_sentence); addSentenceToLog(data.conclusion_sentence); } 
+            else { const errorSentence = "（エラー：物語の締めの一文を生成できませんでした。）"; storyHistory.push(errorSentence); addSentenceToLog(errorSentence); }
             loadingElem.textContent = "テーマを適用しています...";
             await updateTheme(); 
-            
             loadingElem.textContent = "タイトルを作成しています...";
             await generateAndShowTitle();
             loadingElem.style.display = 'none';
             showEnding();
         }
         
-        async function generateAndShowTitle() {
+        async function generateAndShowTitle() { /* (変更なし) */
             const titlePrompt = `# 役割: あなたは優れた編集者です。\n# 指示: 以下の物語に最もふさわしい、タイトルを生成してください。\n# 制約: タイトルは「${selectedTheme}」の雰囲気に合っている必要があります。回答は必ず {"title": "生成されたタイトル"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: 物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(titlePrompt);
             titleDisplayElem.textContent = (data && data.title) ? `『${data.title}』` : `『無題の物語』`;
             titleDisplayElem.style.display = 'block';
         }
         
-        function addSentenceToLog(sentence) { 
-            const p = document.createElement('p'); 
-            p.textContent = sentence; 
-            storyLogElem.appendChild(p); 
-            storyLogElem.scrollTop = storyLogElem.scrollHeight; 
+        function addSentenceToLog(sentence) { /* (変更なし) */
+            const p = document.createElement('p'); p.textContent = sentence; storyLogElem.appendChild(p); storyLogElem.scrollTop = storyLogElem.scrollHeight; 
         }
 
         function showEnding() {
-            endOptionsContainer.innerHTML = `<button id="copy-btn" class="option-btn">タイトルと全文をコピー</button><button class="option-btn" onclick="location.reload()">新しい物語を始める</button>`;
-            document.getElementById('copy-btn').addEventListener('click', copyStoryToClipboard);
+            // ▼▼▼ コピーボタンを削除 ▼▼▼
+            endOptionsContainer.innerHTML = `<button class="option-btn" onclick="location.reload()">新しい物語を始める</button>`;
             const endMark = document.createElement('p');
             endMark.textContent = "― 完 ―";
             endMark.style.textAlign = 'center';
@@ -417,48 +339,20 @@
             storyLogElem.appendChild(endMark);
         }
 
-        async function copyStoryToClipboard() {
-            const title = titleDisplayElem.textContent;
-            const body = storyHistory.join('\n\n');
-            const fullStory = `${title}\n\n${body}`;
-            const copyButton = document.getElementById('copy-btn');
-            try {
-                await navigator.clipboard.writeText(fullStory);
-                const originalText = copyButton.textContent;
-                copyButton.textContent = 'コピーしました！';
-                copyButton.disabled = true;
-                setTimeout(() => { 
-                    copyButton.textContent = originalText; 
-                    copyButton.disabled = false; 
-                }, 2000);
-            } catch (err) {
-                console.error('クリップボードへのコピーに失敗しました:', err);
-                alert('コピーに失敗しました。');
-            }
-        }
+        // ▼▼▼ copyStoryToClipboard 関数を削除 ▼▼▼
         
-        function updateUserInputArea(data) {
+        function updateUserInputArea(data) { /* (変更なし) */
             recommendOptions.innerHTML = '';
             userWordInput.value = '';
-            const btn1 = document.createElement('button'); 
-            btn1.className = 'option-btn'; 
-            btn1.textContent = data.word1; 
-            btn1.onclick = () => proceedWithWord(data.word1);
-            const btn2 = document.createElement('button'); 
-            btn2.className = 'option-btn'; 
-            btn2.textContent = data.word2; 
-            btn2.onclick = () => proceedWithWord(data.word2);
+            const btn1 = document.createElement('button'); btn1.className = 'option-btn'; btn1.textContent = data.word1; btn1.onclick = () => proceedWithWord(data.word1);
+            const btn2 = document.createElement('button'); btn2.className = 'option-btn'; btn2.textContent = data.word2; btn2.onclick = () => proceedWithWord(data.word2);
             recommendOptions.appendChild(btn1);
             recommendOptions.appendChild(btn2);
             userInputArea.style.display = 'block';
         }
 
         submitWordBtn.addEventListener('click', () => proceedWithWord(userWordInput.value));
-        userWordInput.addEventListener('keydown', (event) => { 
-            if (event.key === 'Enter') { 
-                proceedWithWord(userWordInput.value); 
-            } 
-        });
+        userWordInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { proceedWithWord(userWordInput.value); } });
     </script>
 </body>
 </html>
