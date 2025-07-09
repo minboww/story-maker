@@ -66,10 +66,14 @@ app.post('/api/generate-image', async (req, res) => {
         `;
         const geminiResponse = await generativeModel.generateContent(promptForImagePrompt);
         const imagePrompt = geminiResponse.response.candidates[0].content.parts[0].text.trim();
-        const imageResponse = await generativeVisionModel.generateContent({
-            contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
-            generationConfig: { "number_of_images": 1 }
-        });
+   const imageResponse = await generativeVisionModel.generateContent({
+    contents: [{ role: 'user', parts: [{ text: imagePrompt }] }],
+    generationConfig: {
+        "number_of_images": 1,
+        "aspectRatio": "9:16"
+        
+    }
+});
         const imageBase64 = imageResponse.response.candidates[0].content.parts[0].fileData.data;
         res.status(200).json({ imageBase64: imageBase64 });
     } catch (error) {
