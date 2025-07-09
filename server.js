@@ -4,19 +4,27 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { VertexAI } from '@google-cloud/vertexai';
 
+// --- ES Modulesで __dirname を再現するための設定 ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
+
+// 静的ファイル（HTMLなど）が 'public' フォルダにあることをExpressに教える
 app.use(express.static(path.join(__dirname, 'public')));
 
+// --- Google Cloud Vertex AI の設定 ---
 const PROJECT_ID = process.env.GCP_PROJECT_ID; 
 const LOCATION = 'us-central1';
 const vertex_ai = new VertexAI({ project: PROJECT_ID, location: LOCATION });
-const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
+const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
+
+// --- APIエンドポイント ---
 
 app.post('/api/generate-text', async (req, res) => {
     const { prompt } = req.body;
@@ -37,17 +45,20 @@ app.post('/api/generate-text', async (req, res) => {
 });
 
 app.post('/api/generate-colors', async (req, res) => {
-    const { storyHistory } = req.body; // `theme` を受け取る必要がなくなりました
+    const { storyHistory } = req.body;
     if (!storyHistory) {
         return res.status(400).json({ error: 'storyHistory は必須です。' });
     }
 
     const availableFonts = [
-        "'Noto Serif JP', serif", "'Shippori Mincho', serif", "'Sawarabi Mincho', serif",
-        "'M PLUS 1p', sans-serif", "'Sawarabi Gothic', sans-serif", "'Yuji Syuku', cursive"
+        "'Noto Serif JP', serif",      // 標準的・上品
+        "'Shippori Mincho', serif",     // 古風・文学的
+        "'Sawarabi Mincho', serif",     // スタイリッシュな明朝体
+        "'M PLUS 1p', sans-serif",      // モダン・読みやすい
+        "'Sawarabi Gothic', sans-serif",// 標準的なゴシック体
+        "'Yuji Syuku', cursive"         // 手書き風・芸術的
     ];
 
-    // ▼▼▼ プロンプトを修正 ▼▼▼
     const prompt = `
 # Role: あなたは物語の雰囲気を色とフォントで表現する、経験豊富なアートディレクターです。
 # Instruction: 以下の完成した物語の本文を読み、その展開やムードに最も合うカラーパレットとフォントを生成してください。
@@ -79,6 +90,7 @@ ${storyHistory.join('\n')}
     }
 });
 
+// どのAPIルートにも一致しない場合、'public'フォルダ内のindex.htmlを返す
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
