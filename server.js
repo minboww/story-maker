@@ -3,6 +3,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { VertexAI } from '@google-cloud/vertexai';
+import { randomUUID } from 'crypto'; // 受付番号を生成するために追加
 
 // --- ES Modulesで __dirname を再現するための設定 ---
 const __filename = fileURLToPath(import.meta.url);
@@ -14,24 +15,23 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
-
-// ▼▼▼▼▼ この部分を修正 ▼▼▼▼▼
-// 静的ファイル（HTMLなど）が 'public' フォルダにあることをExpressに教える
 app.use(express.static(path.join(__dirname, 'public')));
-// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 // --- Google Cloud Vertex AI の設定 ---
-// (この部分は変更なし)
-const PROJECT_ID = process.env.GCP_PROJECT_ID; 
+const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const LOCATION = 'us-central1';
 const vertex_ai = new VertexAI({ project: PROJECT_ID, location: LOCATION });
-const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
-const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagen-2.0-generate-001' });
+const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
+const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagen-3.0-fast-generate-001' });
+
+// --- ▼▼▼ 新しい部分：処理状況を保存する場所 ▼▼▼ ---
+// サーバーのメモリ上に一時的に保存します。（サーバーが再起動すると消えます）
+const imageGenerationJobs = {};
 
 // --- APIエンドポイント ---
-// (APIエンドポイントのロジックは変更なし)
 
 app.post('/api/generate-text', async (req, res) => {
+    // この部分は変更なし
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: 'prompt は必須です。' });
     try {
@@ -49,52 +49,68 @@ app.post('/api/generate-text', async (req, res) => {
     }
 });
 
-app.post('/api/generate-image', async (req, res) => {
-    // ログを追加して、呼び出し回数を確認
-    console.log(`[${new Date().toISOString()}] /api/generate-image endpoint hit.`);
-
+// --- ▼▼▼ 新しいAPI：画像生成の "受付" をする ▼▼▼ ---
+app.post('/api/request-image-generation', (req, res) => {
+    console.log(`[${new Date().toISOString()}] /api/request-image-generation endpoint hit.`);
     const { storyHistory, theme } = req.body;
-    if (!storyHistory || !Array.isArray(storyHistory) || storyHistory.length === 0) {
-        return res.status(400).json({ error: 'storyHistory is invalid.' });
-    }
 
-    try {
-        // --- 処理を1段階に簡略化 ---
-        // AIにプロンプトを作らせる工程を削除。
-        // 物語の全文とテーマを基に、簡単な英語プロンプトを直接組み立てる。
-        const simplePrompt = `${storyHistory.join('. ')}, theme of ${theme}, cinematic lighting, detailed, photorealistic`;
+    // 受付番号（Job ID）を生成
+    const jobId = randomUUID();
 
-        console.log(`Simplified Prompt: ${simplePrompt}`); // 生成されるプロンプトをログで確認
+    // 処理状況を「処理中」として保存
+    imageGenerationJobs[jobId] = { status: 'pending', data: null };
+    
+    // すぐに「受付ました」とJob IDをフロントエンドに返す
+    res.status(202).json({ jobId });
 
-        // 組み立てたプロンプトで、直接画像生成をリクエスト
-        const imageResponse = await generativeVisionModel.generateContent({
-            contents: [{ role: 'user', parts: [{ text: simplePrompt }] }],
-            generationConfig: {
-                "number_of_images": 1,
-                "aspectRatio": "9:16" // 例：縦長の画像を指定
+    // --- バックグラウンドで重い処理を開始 ---
+    // ここでは await せずに、処理を開始させるだけ（Fire and Forget）
+    (async () => {
+        try {
+            const simplePrompt = `${storyHistory.join('. ')}, theme of ${theme}, cinematic lighting, detailed, photorealistic`;
+            console.log(`[Job ID: ${jobId}] Starting image generation with prompt: ${simplePrompt}`);
+            
+            const imageResponse = await generativeVisionModel.generateContent({
+                contents: [{ role: 'user', parts: [{ text: simplePrompt }] }],
+                generationConfig: { "number_of_images": 1, "aspectRatio": "9:16" }
+            });
+
+            const imageBase64 = imageResponse.response.candidates?.[0]?.content?.parts?.[0]?.fileData?.data;
+            if (!imageBase64) {
+                throw new Error('AIから画像データを取得できませんでした。');
             }
-        });
 
-        const imageBase64 = imageResponse.response.candidates?.[0]?.content?.parts?.[0]?.fileData?.data;
+            // 処理が成功したら、結果を保存
+            imageGenerationJobs[jobId] = { status: 'completed', data: imageBase64 };
+            console.log(`[Job ID: ${jobId}] Image generation completed.`);
 
-        if (!imageBase64) {
-            throw new Error('AI from image data could not be retrieved.');
+        } catch (error) {
+            console.error(`[Job ID: ${jobId}] Image generation failed:`, error);
+            // 処理が失敗したら、ステータスを「失敗」に更新
+            imageGenerationJobs[jobId] = { status: 'failed', data: error.message };
         }
-
-        res.status(200).json({ imageBase64: imageBase64 });
-
-    } catch (error) {
-        console.error('画像生成エラー:', error);
-        res.status(500).json({ error: 'Failed to generate image on the server.', details: error.message });
-    }
+    })();
 });
 
-// ▼▼▼ この部分も修正 ▼▼▼
-// どのAPIルートにも一致しない場合、'public'フォルダ内のindex.htmlを返す
+
+// --- ▼▼▼ 新しいAPI：画像生成の "状況確認" をする ▼▼▼ ---
+app.get('/api/check-image-status/:jobId', (req, res) => {
+    const { jobId } = req.params;
+    const job = imageGenerationJobs[jobId];
+
+    if (!job) {
+        return res.status(404).json({ status: 'not_found' });
+    }
+
+    // 現在の処理状況をフロントエンドに返す
+    res.status(200).json(job);
+});
+
+
+// どのAPIルートにも一致しない場合、index.htmlを返す
 app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-// ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
 app.listen(PORT, () => {
     console.log(`サーバーがポート ${PORT} で起動しました。`);
