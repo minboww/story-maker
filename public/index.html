@@ -112,12 +112,28 @@
             }
         });
 
-        async function proceedWithWord(word) {
-            const trimmedWord = word.trim();
-            if (!trimmedWord) { alert('単語を入力してください。'); return; }
-            userInputArea.style.display = 'none';
-            loadingElem.style.display = 'block';
-            const nextSentence = await generateSentenceFromWord(trimmedWord);
+     async function proceedWithWord(word) {
+    // ▼▼▼ この無効化処理を追加 ▼▼▼
+    // すべての選択肢ボタンと入力フォームを無効化して二度押しを防ぐ
+    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+    submitWordBtn.disabled = true;
+    userWordInput.disabled = true;
+    // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+    const trimmedWord = word.trim();
+    if (!trimmedWord) {
+        alert('単語を入力してください。');
+        // エラーの場合は無効化を解除
+        document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+        submitWordBtn.disabled = false;
+        userWordInput.disabled = false;
+        return;
+    }
+
+    userInputArea.style.display = 'none';
+    loadingElem.style.display = 'block';
+
+    const nextSentence = await generateSentenceFromWord(trimmedWord);
             if (nextSentence === null) {
                 loadingElem.style.display = 'none';
                 const errorP = document.createElement('p');
