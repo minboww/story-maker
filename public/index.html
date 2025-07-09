@@ -174,17 +174,50 @@
         }
         
         async function generateCoverImage() {
-            const keywordPrompt = `# 役割: あなたは優れたアートディレクターです。\n# 指示: 以下の物語を読み、その本質を捉えた表紙画像を生成するための、最も象徴的なキーワードを3つ、英語で、カンマ区切りで生成してください。\n# 制約: 感情、物体、風景、色など、視覚的に表現しやすい単語を選んでください。回答は必ず {"keywords": "keyword1,keyword2,keyword3"} のJSON形式のみで、説明やマークダウンは一切含めないでください。例: {"keywords": "rain,neon,loneliness"}\n# 入力: 物語:\n${storyHistory.join('\n')}\n# 出力:`;
-            const data = await apiCallWithRetry(keywordPrompt);
-            let keywords = "book,story,art"; 
-            if (data && data.keywords) { keywords = data.keywords.replace(/\s/g, ''); }
-            const imageUrl = `https://source.unsplash.com/400x600/?${keywords}`;
-            return new Promise((resolve) => {
-                coverImageElem.onload = () => { console.log("Cover image loaded:", imageUrl); resolve(); };
-                coverImageElem.onerror = () => { console.error("Failed to load cover image."); coverImageContainer.style.display = 'none'; resolve(); };
-                coverImageElem.src = imageUrl;
+        loadingElem.textContent = "AIが画像を生成しています...";
+        
+        try {
+            // Render.comにデプロイしたバックエンドサーバーのURL
+            // ローカルで試す場合は 'http://localhost:3001/generate-image'
+            const backendUrl = 'https://your-render-app-name.onrender.com/generate-image';
+
+            const response = await fetch(backendUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    storyHistory: storyHistory,
+                    theme: selectedTheme
+                }),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || '画像の生成に失敗しました。');
+            }
+
+            const data = await response.json();
+            
+            // Base64データから画像URLを生成して表示
+            coverImageElem.src = `data:image/png;base64,${data.imageBase64}`;
+            
+            return new Promise((resolve) => {
+                coverImageElem.onload = () => resolve();
+                coverImageElem.onerror = () => {
+                    console.error("生成された画像の表示に失敗しました。");
+                    coverImageContainer.style.display = 'none';
+                    resolve();
+                };
+            });
+
+        } catch (error) {
+            console.error('Error calling backend for image generation:', error);
+            loadingElem.textContent = "画像生成エラー";
+            // エラー時でも処理を続けるためにresolveする
+            return Promise.resolve();
         }
+    }
         
         async function generateAndShowTitle() {
             const titlePrompt = `# 役割: あなたは優れた編集者です。\n# 指示: 以下の物語に最もふさわしい、タイトルを生成してください。\n# 制約: タイトルは「${selectedTheme}」の雰囲気に合っている必要があります。回答は必ず {"title": "生成されたタイトル"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: 物語:\n${storyHistory.join('\n')}\n# 出力:`;
