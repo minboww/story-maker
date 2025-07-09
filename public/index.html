@@ -418,7 +418,7 @@
                 case 2: roleDescription = `物語を「結」＝収束と結論に導く専門家`; instruction = `与えられた単語「${word}」を使い、前の文で起きた衝撃的な展開をうまく収め、物語を結末へと向かわせる「次の一文」を生成してください。`; break;
             }
              // `selectedTheme` を使わず、物語の文脈を重視する
-            const prompt = `# 役割: あなたは、${roleDescription}です。\n# 指示: ${instruction}\n# 制約: これまでの物語から続く、文体と雰囲気を維持してください。「次の一文」は、選ばれた単語「${word}」をとても強く反映させてください。「次の一文」は前の文章と文法的につながりを持たせてください。回答は必ず {"sentence": "生成された次の一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
+            const prompt = `# 役割: あなたは、${roleDescription}です。\n# 指示: ${instruction}\n# 制約: これまでの物語から続く雰囲気を維持してください。「次の一文」は必ず、これまでの物語と同じ文体にしてください。「次の一文」は、選ばれた単語「${word}」をとても強く反映させてください。「次の一文」は前の文章と文法的につながりを持たせてください。回答は必ず {"sentence": "生成された次の一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(prompt);
             return data ? data.sentence : null;
         }
