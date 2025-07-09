@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>起承転結 物語メーカー</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700&display=swap');
+        /* 使用する可能性のあるフォントを全て読み込む */
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+1p:wght@400;700&family=Noto+Serif+JP:wght@400;700&family=Sawarabi+Gothic&family=Sawarabi+Mincho&family=Shippori+Mincho:wght@400;700&family=Yuji+Syuku&display=swap');
         
-        /* ▼▼▼ 色をCSS変数で管理 ▼▼▼ */
         :root {
             --bg-color: #2c2c2c;
             --container-bg-color: #3a3a3a;
@@ -22,6 +22,7 @@
         }
 
         body { 
+            /* 初期フォントを設定 */
             font-family: 'Noto Serif JP', serif; 
             background-color: var(--bg-color); 
             color: var(--text-color); 
@@ -32,7 +33,7 @@
             margin: 0; 
             padding: 20px; 
             box-sizing: border-box; 
-            transition: background-color 1.5s ease, color 1.5s ease; /* 滑らかな変化 */
+            transition: background-color 1.5s ease, color 1.5s ease;
         }
         .container { 
             text-align: center; 
@@ -42,10 +43,8 @@
             box-shadow: 0 8px 30px rgba(0,0,0,0.5); 
             max-width: 600px; 
             width: 100%; 
-            transition: all 1.5s ease; /* 滑らかな変化 */
+            transition: all 1.5s ease; 
         }
-        /* ▼ 画像関連のスタイルは削除 ▼ */
-        
         #title-display { 
             font-size: 1.5em; 
             font-weight: bold; 
@@ -53,10 +52,16 @@
             margin-bottom: 15px; 
             display: none; 
             animation: fadeIn 1s forwards;
-            transition: color 1.5s ease; /* 滑らかな変化 */
+            transition: color 1.5s ease;
         }
-        #act-display { font-size: 1em; color: #ccc; margin-bottom: 25px; border-bottom: 1px solid #555; padding-bottom: 15px; font-weight: bold; }
-        
+        #act-display { 
+            font-size: 1em; 
+            color: #ccc; 
+            margin-bottom: 25px; 
+            border-bottom: 1px solid #555; 
+            padding-bottom: 15px; 
+            font-weight: bold; 
+        }
         #story-log { 
             margin-bottom: 30px; 
             text-align: left; 
@@ -64,11 +69,18 @@
             border-left: 3px solid var(--btn-border-color); 
             padding-left: 20px; 
             min-height: 100px;
-            transition: border-color 1.5s ease; /* 滑らかな変化 */
+            transition: border-color 1.5s ease;
         }
-        #story-log p { margin: 0 0 1em 0; opacity: 0; animation: fadeIn 0.8s forwards; }
-        #story-log p:last-child { font-weight: bold; color: var(--bold-text-color); transition: color 1.5s ease; }
-        
+        #story-log p { 
+            margin: 0 0 1em 0; 
+            opacity: 0; 
+            animation: fadeIn 0.8s forwards; 
+        }
+        #story-log p:last-child { 
+            font-weight: bold; 
+            color: var(--bold-text-color); 
+            transition: color 1.5s ease; 
+        }
         .option-btn { 
             background: var(--btn-bg-color); 
             border: 1px solid var(--btn-border-color); 
@@ -78,16 +90,18 @@
             font-size: 1.1em; 
             cursor: pointer; 
             width: 100%; 
-            font-family: 'Noto Serif JP', serif;
-            transition: all 0.3s ease-in-out; /* ボタンは少し速めの変化 */
+            font-family: inherit; /* bodyのフォントを継承 */
+            transition: all 0.3s ease-in-out; 
         }
         .option-btn:hover:not(:disabled) { 
             background-color: var(--btn-hover-bg-color); 
             border-color: var(--accent-color); 
             transform: translateY(-2px); 
         }
-        .option-btn:disabled { opacity: 0.7; cursor: not-allowed; }
-        
+        .option-btn:disabled { 
+            opacity: 0.7; 
+            cursor: not-allowed; 
+        }
         #user-word-input { 
             flex-grow: 1; 
             padding: 15px; 
@@ -95,32 +109,74 @@
             border: 1px solid var(--input-border-color); 
             background-color: var(--input-bg-color); 
             color: var(--text-color); 
-            font-family: 'Noto Serif JP', serif; 
+            font-family: inherit; /* bodyのフォントを継承 */
             font-size: 1em; 
-            transition: all 1.5s ease; /* 滑らかな変化 */
+            transition: all 1.5s ease;
         }
-        #user-word-input:focus { border-color: var(--accent-color); outline: none; }
-        
+        #user-word-input:focus { 
+            border-color: var(--accent-color); 
+            outline: none; 
+        }
         #submit-word-btn { 
             background: var(--accent-color); 
             color: var(--bg-color); 
-            border: none; padding: 15px 20px; 
-            border-radius: 8px; cursor: pointer; 
-            font-family: 'Noto Serif JP', serif; 
-            font-weight: bold; font-size: 1em; 
-            transition: all 0.3s ease; /* ボタンは少し速めの変化 */
+            border: none; 
+            padding: 15px 20px; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-family: inherit; /* bodyのフォントを継承 */
+            font-weight: bold; 
+            font-size: 1em; 
+            transition: all 0.3s ease; 
             white-space: nowrap; 
         }
-        #submit-word-btn:hover { background-color: var(--btn-hover-bg-color); color: var(--text-color); }
-        
-        #loading { display: none; margin-top: 20px; font-size: 1.2em; color: #aaa; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        #user-input-area { width: 100%; animation: fadeIn 0.5s; display: none; }
-        #user-input-area > p { margin-top: 20px; margin-bottom: 15px; font-weight: bold; font-size: 1.1em; }
-        #recommend-options { display: flex; flex-direction: column; gap: 15px; }
-        .input-separator { margin: 25px 0 15px; font-size: 1em; color: #ccc; font-weight: bold; }
-        .input-group { display: flex; gap: 10px; margin-top: 10px; }
-        #end-options-container { margin-top: 20px; display: flex; flex-direction: column; gap: 15px; }
+        #submit-word-btn:hover { 
+            background-color: var(--btn-hover-bg-color); 
+            color: var(--text-color); 
+        }
+        #loading { 
+            display: none; 
+            margin-top: 20px; 
+            font-size: 1.2em; 
+            color: #aaa; 
+        }
+        @keyframes fadeIn { 
+            from { opacity: 0; transform: translateY(10px); } 
+            to { opacity: 1; transform: translateY(0); } 
+        }
+        #user-input-area { 
+            width: 100%; 
+            animation: fadeIn 0.5s; 
+            display: none; 
+        }
+        #user-input-area > p { 
+            margin-top: 20px; 
+            margin-bottom: 15px; 
+            font-weight: bold; 
+            font-size: 1.1em; 
+        }
+        #recommend-options { 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
+        .input-separator { 
+            margin: 25px 0 15px; 
+            font-size: 1em; 
+            color: #ccc; 
+            font-weight: bold; 
+        }
+        .input-group { 
+            display: flex; 
+            gap: 10px; 
+            margin-top: 10px; 
+        }
+        #end-options-container { 
+            margin-top: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 15px; 
+        }
     </style>
 </head>
 <body>
@@ -142,7 +198,6 @@
     </div>
 
     <script>
-        // ▼▼▼ 画像関連の要素取得を削除 ▼▼▼
         const titleDisplayElem = document.getElementById('title-display');
         const actDisplayElem = document.getElementById('act-display');
         const storyLogElem = document.getElementById('story-log');
@@ -158,7 +213,7 @@
         let storyHistory = [];
         let choiceCount = 0;
         const MAX_RETRIES = 3;
-
+        
         async function apiCallWithRetry(prompt, retries = MAX_RETRIES) {
             for (let i = 0; i < retries; i++) {
                 try {
@@ -180,8 +235,7 @@
             }
         }
         
-        // ▼▼▼ 新しい関数を追加 ▼▼▼
-        async function updateThemeColors() {
+        async function updateTheme() {
             try {
                 const response = await fetch('/api/generate-colors', {
                     method: 'POST',
@@ -192,23 +246,28 @@
                     }),
                 });
                 if (!response.ok) {
-                    console.error('カラー生成に失敗しました。既存の色を維持します。');
+                    console.error('テーマ生成に失敗しました。既存のテーマを維持します。');
                     return; 
                 }
-                const colors = await response.json();
+                const theme = await response.json();
                 const root = document.documentElement;
-                root.style.setProperty('--bg-color', colors.bg);
-                root.style.setProperty('--container-bg-color', colors.container);
-                root.style.setProperty('--text-color', colors.text);
-                root.style.setProperty('--bold-text-color', colors.boldText);
-                root.style.setProperty('--accent-color', colors.accent);
-                root.style.setProperty('--btn-bg-color', colors.btn);
-                root.style.setProperty('--btn-hover-bg-color', colors.btnHover);
-                root.style.setProperty('--btn-border-color', colors.btn); // 境界線の色も更新
-                root.style.setProperty('--input-bg-color', colors.bg); // 入力欄の背景も更新
-                root.style.setProperty('--input-border-color', colors.btn); // 入力欄の境界線も更新
+
+                root.style.setProperty('--bg-color', theme.bg);
+                root.style.setProperty('--container-bg-color', theme.container);
+                root.style.setProperty('--text-color', theme.text);
+                root.style.setProperty('--bold-text-color', theme.boldText);
+                root.style.setProperty('--accent-color', theme.accent);
+                root.style.setProperty('--btn-bg-color', theme.btn);
+                root.style.setProperty('--btn-hover-bg-color', theme.btnHover);
+                root.style.setProperty('--btn-border-color', theme.btn);
+                root.style.setProperty('--input-bg-color', theme.bg);
+                root.style.setProperty('--input-border-color', theme.btn);
+
+                if (theme.fontFamily) {
+                    document.body.style.fontFamily = theme.fontFamily;
+                }
             } catch (error) {
-                console.error('テーマカラーの適用中にエラーが発生しました:', error);
+                console.error('テーマの適用中にエラーが発生しました:', error);
             }
         }
 
@@ -222,7 +281,7 @@
             if (data && data.sentence) {
                 storyHistory.push(data.sentence);
                 addSentenceToLog(data.sentence);
-                await updateThemeColors(); // ★ 色を更新
+                // ★ ここでのテーマ更新は行わない
                 await generateRecommendedWords();
             } else {
                 loadingElem.style.display = 'none';
@@ -262,14 +321,17 @@
             storyHistory.push(nextSentence);
             addSentenceToLog(nextSentence);
             
-            await updateThemeColors(); // ★ 色を更新
+            // ★ ここでのテーマ更新は行わない
             
             choiceCount++;
-            if (choiceCount >= 3) { await generateConclusion(); } else { await generateRecommendedWords(); }
+            if (choiceCount >= 3) { 
+                await generateConclusion(); 
+            } else { 
+                await generateRecommendedWords(); 
+            }
         }
 
         async function generateRecommendedWords() {
-            // (この関数に変更はありません)
             let currentAct = "", roleDescription = "", instruction = "";
             switch (choiceCount) {
                 case 0: currentAct = "【承】"; roleDescription = `物語を「承」＝発展させる専門家です。`; instruction = `物語をさらに深く、面白く発展させるための、二つの具体的な「物の名前」の単語を提案してください。`; break;
@@ -286,7 +348,6 @@
         }
 
         async function generateSentenceFromWord(word) {
-            // (この関数に変更はありません)
             loadingElem.textContent = `「${word}」から物語を紡いでいます...`;
             let roleDescription = "", instruction = "";
             switch (choiceCount) {
@@ -305,31 +366,40 @@
             loadingElem.style.display = 'block';
             const finalPrompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする、偉大なフィナーレを創造する作家です。\n# 指示: 以下の「これまでの物語」のすべてを読み、感動的または、衝撃的、あるいは心に残るような、「締めの一文」を生成してください。\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気に合わせてください。回答は必ず {"conclusion_sentence": "締めの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(finalPrompt);
-            if (data && data.conclusion_sentence) { storyHistory.push(data.conclusion_sentence); addSentenceToLog(data.conclusion_sentence); } 
-            else { const errorSentence = "（エラー：物語の締めの一文を生成できませんでした。）"; storyHistory.push(errorSentence); addSentenceToLog(errorSentence); }
+            if (data && data.conclusion_sentence) { 
+                storyHistory.push(data.conclusion_sentence); 
+                addSentenceToLog(data.conclusion_sentence); 
+            } else { 
+                const errorSentence = "（エラー：物語の締めの一文を生成できませんでした。）"; 
+                storyHistory.push(errorSentence); 
+                addSentenceToLog(errorSentence); 
+            }
             
-            await updateThemeColors(); // ★ 最後の色更新
+            // ★ 物語の完成後、最後に一度だけテーマを更新
+            loadingElem.textContent = "テーマを適用しています...";
+            await updateTheme(); 
             
             loadingElem.textContent = "タイトルを作成しています...";
-            await generateAndShowTitle(); // Promise.all と画像生成の呼び出しを削除
+            await generateAndShowTitle();
             loadingElem.style.display = 'none';
             showEnding();
         }
         
-        // ▼▼▼ generateCoverImage 関数を完全に削除 ▼▼▼
-        
         async function generateAndShowTitle() {
-            // (この関数に変更はありません)
             const titlePrompt = `# 役割: あなたは優れた編集者です。\n# 指示: 以下の物語に最もふさわしい、タイトルを生成してください。\n# 制約: タイトルは「${selectedTheme}」の雰囲気に合っている必要があります。回答は必ず {"title": "生成されたタイトル"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: 物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(titlePrompt);
             titleDisplayElem.textContent = (data && data.title) ? `『${data.title}』` : `『無題の物語』`;
             titleDisplayElem.style.display = 'block';
         }
         
-        function addSentenceToLog(sentence) { const p = document.createElement('p'); p.textContent = sentence; storyLogElem.appendChild(p); storyLogElem.scrollTop = storyLogElem.scrollHeight; }
+        function addSentenceToLog(sentence) { 
+            const p = document.createElement('p'); 
+            p.textContent = sentence; 
+            storyLogElem.appendChild(p); 
+            storyLogElem.scrollTop = storyLogElem.scrollHeight; 
+        }
 
         function showEnding() {
-            // ▼▼▼ 画像表示のロジックを削除 ▼▼▼
             endOptionsContainer.innerHTML = `<button id="copy-btn" class="option-btn">タイトルと全文をコピー</button><button class="option-btn" onclick="location.reload()">新しい物語を始める</button>`;
             document.getElementById('copy-btn').addEventListener('click', copyStoryToClipboard);
             const endMark = document.createElement('p');
@@ -341,7 +411,6 @@
         }
 
         async function copyStoryToClipboard() {
-            // (この関数に変更はありません)
             const title = titleDisplayElem.textContent;
             const body = storyHistory.join('\n\n');
             const fullStory = `${title}\n\n${body}`;
@@ -351,7 +420,10 @@
                 const originalText = copyButton.textContent;
                 copyButton.textContent = 'コピーしました！';
                 copyButton.disabled = true;
-                setTimeout(() => { copyButton.textContent = originalText; copyButton.disabled = false; }, 2000);
+                setTimeout(() => { 
+                    copyButton.textContent = originalText; 
+                    copyButton.disabled = false; 
+                }, 2000);
             } catch (err) {
                 console.error('クリップボードへのコピーに失敗しました:', err);
                 alert('コピーに失敗しました。');
@@ -359,18 +431,27 @@
         }
         
         function updateUserInputArea(data) {
-            // (この関数に変更はありません)
             recommendOptions.innerHTML = '';
             userWordInput.value = '';
-            const btn1 = document.createElement('button'); btn1.className = 'option-btn'; btn1.textContent = data.word1; btn1.onclick = () => proceedWithWord(data.word1);
-            const btn2 = document.createElement('button'); btn2.className = 'option-btn'; btn2.textContent = data.word2; btn2.onclick = () => proceedWithWord(data.word2);
+            const btn1 = document.createElement('button'); 
+            btn1.className = 'option-btn'; 
+            btn1.textContent = data.word1; 
+            btn1.onclick = () => proceedWithWord(data.word1);
+            const btn2 = document.createElement('button'); 
+            btn2.className = 'option-btn'; 
+            btn2.textContent = data.word2; 
+            btn2.onclick = () => proceedWithWord(data.word2);
             recommendOptions.appendChild(btn1);
             recommendOptions.appendChild(btn2);
             userInputArea.style.display = 'block';
         }
 
         submitWordBtn.addEventListener('click', () => proceedWithWord(userWordInput.value));
-        userWordInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { proceedWithWord(userWordInput.value); } });
+        userWordInput.addEventListener('keydown', (event) => { 
+            if (event.key === 'Enter') { 
+                proceedWithWord(userWordInput.value); 
+            } 
+        });
     </script>
 </body>
 </html>
