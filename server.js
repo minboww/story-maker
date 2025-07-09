@@ -25,7 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const PROJECT_ID = process.env.GCP_PROJECT_ID; 
 const LOCATION = 'us-central1';
 const vertex_ai = new VertexAI({ project: PROJECT_ID, location: LOCATION });
-const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-1.5-flash-001' });
+const generativeModel = vertex_ai.getGenerativeModel({ model: ' gemini-1.5-flash' });
 const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagegeneration@0.0.2' });
 
 // --- APIエンドポイント ---
