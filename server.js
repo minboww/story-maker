@@ -31,7 +31,14 @@ app.post('/api/generate', async (req, res) => {
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
-    res.json(JSON.parse(text));
+     const jsonMatch = text.match(/{[\s\S]*}/);
+  if (jsonMatch && jsonMatch[0]) {
+    // 抜き出したJSON文字列を解析して送信する
+    res.json(JSON.parse(jsonMatch[0]));
+  } else {
+    // もしJSONが見つからなかった場合はエラーを投げる
+    throw new Error("Valid JSON object not found in the AI response.");
+  }
   } catch (error) {
     console.error('Error calling Google AI API:', error);
     res.status(500).json({ error: 'An error occurred while generating content.' });
