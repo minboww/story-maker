@@ -214,4 +214,251 @@
         let choiceCount = 0;
         const MAX_RETRIES = 3;
         
-        async function apiCallWithRetry(prompt, retries = MAX
+        async function apiCallWithRetry(prompt, retries = MAX_RETRIES) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch('/api/generate-text', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ prompt: prompt }),
+                    });
+                    if (!response.ok) {
+                        const errorData = await response.json();
+                        throw new Error(errorData.details || `サーバーエラー: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error(`API呼び出しに失敗 (試行 ${i + 1}):`, error);
+                    if (i === retries - 1) { return null; }
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                }
+            }
+        }
+        
+        async function updateTheme() {
+            try {
+                const response = await fetch('/api/generate-colors', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        storyHistory: storyHistory,
+                        theme: selectedTheme
+                    }),
+                });
+                if (!response.ok) {
+                    console.error('テーマ生成に失敗しました。既存のテーマを維持します。');
+                    return; 
+                }
+                const theme = await response.json();
+                const root = document.documentElement;
+
+                root.style.setProperty('--bg-color', theme.bg);
+                root.style.setProperty('--container-bg-color', theme.container);
+                root.style.setProperty('--text-color', theme.text);
+                root.style.setProperty('--bold-text-color', theme.boldText);
+                root.style.setProperty('--accent-color', theme.accent);
+                root.style.setProperty('--btn-bg-color', theme.btn);
+                root.style.setProperty('--btn-hover-bg-color', theme.btnHover);
+                root.style.setProperty('--btn-border-color', theme.btn);
+                root.style.setProperty('--input-bg-color', theme.bg);
+                root.style.setProperty('--input-border-color', theme.btn);
+
+                if (theme.fontFamily) {
+                    document.body.style.fontFamily = theme.fontFamily;
+                }
+            } catch (error) {
+                console.error('テーマの適用中にエラーが発生しました:', error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // ▼▼▼ 新しいテーマ選択ロジック ▼▼▼
+            let availableThemes = JSON.parse(localStorage.getItem('availableStoryThemes'));
+
+            if (!availableThemes || availableThemes.length === 0) {
+                console.log("利用可能なテーマがなくなったため、リストをリセットします。");
+                availableThemes = [...masterThemes];
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableThemes.length);
+            selectedTheme = availableThemes[randomIndex];
+
+            availableThemes.splice(randomIndex, 1);
+
+            localStorage.setItem('availableStoryThemes', JSON.stringify(availableThemes));
+            // ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
+
+            loadingElem.style.display = 'block';
+            actDisplayElem.textContent = "【起】";
+            loadingElem.textContent = `テーマ「${selectedTheme}」で物語の始まりを考えています...`;
+            const initialPrompt = `# 役割: あなたは「${selectedTheme}」の作家です。\n# 指示: 物語の魅力的な「始まりの一文」を一つだけ生成してください。\n# 制約: 回答は必ず {"sentence": "生成された始まりの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 出力:`;
+            const data = await apiCallWithRetry(initialPrompt);
+            if (data && data.sentence) {
+                storyHistory.push(data.sentence);
+                addSentenceToLog(data.sentence);
+                await generateRecommendedWords();
+            } else {
+                loadingElem.style.display = 'none';
+                storyLogElem.innerHTML = `<p>物語を始めることができませんでした。ネットワーク接続を確認して、もう一度お試しください。</p>`;
+                endOptionsContainer.innerHTML = `<button class="option-btn" onclick="location.reload()">もう一度試す</button>`;
+            }
+        });
+
+        async function proceedWithWord(word) {
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            submitWordBtn.disabled = true;
+            userWordInput.disabled = true;
+            const trimmedWord = word.trim();
+            if (!trimmedWord) {
+                alert('単語を入力してください。');
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+                submitWordBtn.disabled = false;
+                userWordInput.disabled = false;
+                return;
+            }
+            userInputArea.style.display = 'none';
+            loadingElem.style.display = 'block';
+            const nextSentence = await generateSentenceFromWord(trimmedWord);
+            if (nextSentence === null) {
+                loadingElem.style.display = 'none';
+                const errorP = document.createElement('p');
+                errorP.textContent = 'エラー：物語の生成に失敗しました。ページを再読み込みして、もう一度お試しください。';
+                errorP.style.color = '#ff6b6b';
+                errorP.style.fontWeight = 'bold';
+                storyLogElem.appendChild(errorP);
+                endOptionsContainer.innerHTML = `<button class="option-btn" onclick="location.reload()">最初からやり直す</button>`;
+                return;
+            }
+            storyHistory.push(nextSentence);
+            addSentenceToLog(nextSentence);
+            choiceCount++;
+            if (choiceCount >= 3) { 
+                await generateConclusion(); 
+            } else { 
+                await generateRecommendedWords(); 
+            }
+        }
+
+        async function generateRecommendedWords() {
+            let currentAct = "", roleDescription = "", instruction = "";
+            switch (choiceCount) {
+                case 0: currentAct = "【承】"; roleDescription = `物語を「承」＝発展させる専門家です。`; instruction = `物語をさらに深く、面白く発展させるための、二つの具体的な「物の名前」の単語を提案してください。`; break;
+                case 1: currentAct = "【転】"; roleDescription = `物語に「転」＝劇的な転換点をもたらす専門家です。`; instruction = `これまでの流れを根底から覆すような、衝撃的で、全く予測不可能な展開につながる、二つの完全にランダムな単語を提案してください。`; break;
+                case 2: currentAct = "【結】"; roleDescription = `あなたは物語を「結」＝収束と結論に導く専門家です。`; instruction = `前の文で起きた衝撃的な展開をうまく収め、物語を結末へと向かわせるための、二つの対照的な「抽象的」な単語を提案してください。`; break;
+            }
+            actDisplayElem.textContent = currentAct;
+            loadingElem.textContent = "物語の鍵となる単語を考えています...";
+            loadingElem.style.display = 'block';
+            const prompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする作家です。今回のあなたの役割は、${roleDescription}\n# 指示: ${instruction}\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気に合う単語を選んでください。回答は必ず {"word1": "単語1", "word2": "単語2"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
+            const data = await apiCallWithRetry(prompt);
+            loadingElem.style.display = 'none';
+            if (data) { updateUserInputArea(data); }
+        }
+
+        async function generateSentenceFromWord(word) {
+            loadingElem.textContent = `「${word}」から物語を紡いでいます...`;
+            let roleDescription = "", instruction = "";
+            switch (choiceCount) {
+                case 0: roleDescription = `物語を「承」＝発展させる専門家`; instruction = `与えられた単語「${word}」を使い、物語をさらに深く発展させる「次の一文」を生成してください。`; break;
+                case 1: roleDescription = `物語に「転」＝劇的な転換点をもたらす専門家`; instruction = `与えられた単語「${word}」を使い、これまでの流れを根底から覆すような、衝撃的で、全く予測不可能な展開の「次の一文」を生成してください。`; break;
+                case 2: roleDescription = `物語を「結」＝収束と結論に導く専門家`; instruction = `与えられた単語「${word}」を使い、前の文で起きた衝撃的な展開をうまく収め、物語を結末へと向かわせる「次の一文」を生成してください。`; break;
+            }
+            const prompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする、${roleDescription}です。\n# 指示: ${instruction}\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気を必ず維持してください。「次の一文」は、選ばれた単語「${word}」をとても強く反映させてください。「次の一文」は前の文章と文法的につながりを持たせてください。回答は必ず {"sentence": "生成された次の一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
+            const data = await apiCallWithRetry(prompt);
+            return data ? data.sentence : null;
+        }
+
+        async function generateConclusion() {
+            actDisplayElem.style.display = 'none';
+            loadingElem.textContent = "物語の結末を考えています...";
+            loadingElem.style.display = 'block';
+            const finalPrompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする、偉大なフィナーレを創造する作家です。\n# 指示: 以下の「これまでの物語」のすべてを読み、感動的または、衝撃的、あるいは心に残るような、「締めの一文」を生成してください。\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気に合わせてください。回答は必ず {"conclusion_sentence": "締めの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
+            const data = await apiCallWithRetry(finalPrompt);
+            if (data && data.conclusion_sentence) { 
+                storyHistory.push(data.conclusion_sentence); 
+                addSentenceToLog(data.conclusion_sentence); 
+            } else { 
+                const errorSentence = "（エラー：物語の締めの一文を生成できませんでした。）"; 
+                storyHistory.push(errorSentence); 
+                addSentenceToLog(errorSentence); 
+            }
+            
+            loadingElem.textContent = "テーマを適用しています...";
+            await updateTheme(); 
+            
+            loadingElem.textContent = "タイトルを作成しています...";
+            await generateAndShowTitle();
+            loadingElem.style.display = 'none';
+            showEnding();
+        }
+        
+        async function generateAndShowTitle() {
+            const titlePrompt = `# 役割: あなたは優れた編集者です。\n# 指示: 以下の物語に最もふさわしい、タイトルを生成してください。\n# 制約: タイトルは「${selectedTheme}」の雰囲気に合っている必要があります。回答は必ず {"title": "生成されたタイトル"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: 物語:\n${storyHistory.join('\n')}\n# 出力:`;
+            const data = await apiCallWithRetry(titlePrompt);
+            titleDisplayElem.textContent = (data && data.title) ? `『${data.title}』` : `『無題の物語』`;
+            titleDisplayElem.style.display = 'block';
+        }
+        
+        function addSentenceToLog(sentence) { 
+            const p = document.createElement('p'); 
+            p.textContent = sentence; 
+            storyLogElem.appendChild(p); 
+            storyLogElem.scrollTop = storyLogElem.scrollHeight; 
+        }
+
+        function showEnding() {
+            endOptionsContainer.innerHTML = `<button id="copy-btn" class="option-btn">タイトルと全文をコピー</button><button class="option-btn" onclick="location.reload()">新しい物語を始める</button>`;
+            document.getElementById('copy-btn').addEventListener('click', copyStoryToClipboard);
+            const endMark = document.createElement('p');
+            endMark.textContent = "― 完 ―";
+            endMark.style.textAlign = 'center';
+            endMark.style.fontWeight = 'bold';
+            endMark.style.marginTop = '2em';
+            storyLogElem.appendChild(endMark);
+        }
+
+        async function copyStoryToClipboard() {
+            const title = titleDisplayElem.textContent;
+            const body = storyHistory.join('\n\n');
+            const fullStory = `${title}\n\n${body}`;
+            const copyButton = document.getElementById('copy-btn');
+            try {
+                await navigator.clipboard.writeText(fullStory);
+                const originalText = copyButton.textContent;
+                copyButton.textContent = 'コピーしました！';
+                copyButton.disabled = true;
+                setTimeout(() => { 
+                    copyButton.textContent = originalText; 
+                    copyButton.disabled = false; 
+                }, 2000);
+            } catch (err) {
+                console.error('クリップボードへのコピーに失敗しました:', err);
+                alert('コピーに失敗しました。');
+            }
+        }
+        
+        function updateUserInputArea(data) {
+            recommendOptions.innerHTML = '';
+            userWordInput.value = '';
+            const btn1 = document.createElement('button'); 
+            btn1.className = 'option-btn'; 
+            btn1.textContent = data.word1; 
+            btn1.onclick = () => proceedWithWord(data.word1);
+            const btn2 = document.createElement('button'); 
+            btn2.className = 'option-btn'; 
+            btn2.textContent = data.word2; 
+            btn2.onclick = () => proceedWithWord(data.word2);
+            recommendOptions.appendChild(btn1);
+            recommendOptions.appendChild(btn2);
+            userInputArea.style.display = 'block';
+        }
+
+        submitWordBtn.addEventListener('click', () => proceedWithWord(userWordInput.value));
+        userWordInput.addEventListener('keydown', (event) => { 
+            if (event.key === 'Enter') { 
+                proceedWithWord(userWordInput.value); 
+            } 
+        });
+    </script>
+</body>
+</html>
