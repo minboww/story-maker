@@ -26,7 +26,7 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const LOCATION = 'us-central1';
 const vertex_ai = new VertexAI({ project: PROJECT_ID, location: LOCATION });
 const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
-const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagegeneration@0.0.2' });
+const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagen-3.0-fast-generate-001' });
 
 // --- APIエンドポイント ---
 // (APIエンドポイントのロジックは変更なし)
