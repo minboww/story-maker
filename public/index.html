@@ -428,7 +428,7 @@
             loadingElem.textContent = "物語の結末を考えています...";
             loadingElem.style.display = 'block';
             // `selectedTheme` を使わず、物語の文脈を重視する
-            const finalPrompt = `# 役割: あなたは、物語に偉大なフィナーレを創造する作家です。\n# 指示: 以下の「これまでの物語」のすべてを読み、感動的または、衝撃的、あるいは心に残るような、「締めの一文」を生成してください。\n# 制約: 回答は必ず {"conclusion_sentence": "締めの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
+            const finalPrompt = `# 役割: あなたは、物語に偉大なフィナーレを創造する作家です。\n# 指示: 以下の「これまでの物語」のすべてを読み、感動的または、衝撃的、あるいは心に残るような、「締めの一文」を生成してください。\n# 制約:「締めの一文」は必ず、これまでの物語と同じ文体にしてください。 回答は必ず {"conclusion_sentence": "締めの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(finalPrompt);
             
             loadingElem.style.display = 'none';
