@@ -22,7 +22,7 @@ const PROJECT_ID = process.env.GCP_PROJECT_ID;
 const LOCATION = 'us-central1';
 const vertex_ai = new VertexAI({ project: PROJECT_ID, location: LOCATION });
 const generativeModel = vertex_ai.getGenerativeModel({ model: 'gemini-2.0-flash-001' });
-const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagen-3.0-fast-generate-001' });
+const generativeVisionModel = vertex_ai.getGenerativeModel({ model: 'imagen-4.0-fast-generate-preview-06-06' });
 
 // --- ▼▼▼ 新しい部分：処理状況を保存する場所 ▼▼▼ ---
 // サーバーのメモリ上に一時的に保存します。（サーバーが再起動すると消えます）
