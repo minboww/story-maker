@@ -66,14 +66,6 @@
         const submitWordBtn = document.getElementById('submit-word-btn');
         const endOptionsContainer = document.getElementById('end-options-container');
 
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        // ★                                                                    ★
-        // ★  ここにあなたのRender.comアプリのURLを貼り付けてください             ★
-        // ★  例: 'https://story-maker-9xfp.onrender.com/'                          ★
-        // ★                                                                    ★
-        // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-        const BACKEND_BASE_URL = 'https://your-render-app-name.onrender.com';
-
         const themes = ["日本の現代文学風", "子供向けの心温まるおとぎ話", "ハードボイルドな探偵小説", "宇宙を舞台にしたSF", "甘酸っぱい青春恋愛ストーリー", "壮大なファンタジー叙事詩", "シュールな不条理演劇", "時代小説","複雑な人間関係を描いた人間ドラマ","ホラー小説","ライトノベル","ワクワクする少年向け小説","日常生活を描いた心温まる小説"];
         let selectedTheme = "";
         let storyHistory = [];
@@ -83,7 +75,8 @@
         async function apiCallWithRetry(prompt, retries = MAX_RETRIES) {
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(`${BACKEND_BASE_URL}/generate-text`, {
+                    // 自分自身（のサーバー）の '/api/generate-text' にリクエストを送信
+                    const response = await fetch('/api/generate-text', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ prompt: prompt }),
@@ -102,11 +95,6 @@
         }
         
         document.addEventListener('DOMContentLoaded', async () => {
-            if (BACKEND_BASE_URL === 'https://your-render-app-name.onrender.com') {
-                alert('バックエンドサーバーのURLが設定されていません。index.htmlを編集してください。');
-                loadingElem.textContent = '設定エラー';
-                return;
-            }
             loadingElem.style.display = 'block';
             selectedTheme = themes[Math.floor(Math.random() * themes.length)];
             actDisplayElem.textContent = "【起】";
@@ -192,7 +180,8 @@
         async function generateCoverImage() {
             loadingElem.textContent = "AIが画像を生成しています...";
             try {
-                const response = await fetch(`${BACKEND_BASE_URL}/generate-image`, {
+                // 自分自身（のサーバー）の '/api/generate-image' にリクエストを送信
+                const response = await fetch('/api/generate-image', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
