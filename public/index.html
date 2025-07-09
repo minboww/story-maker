@@ -33,8 +33,20 @@
             box-sizing: border-box; 
             transition: background-color 1.5s ease, color 1.5s ease;
         }
+        
+        /* ▼▼▼ サイトタイトルのスタイルを修正 ▼▼▼ */
+        #site-title {
+            position: fixed; /* 画面に固定 */
+            top: 20px;
+            left: 25px;
+            font-size: 1em;
+            color: #aaa;
+            font-weight: bold;
+            z-index: 10; /* 他の要素より手前に表示 */
+        }
+
         .container { 
-            position: relative; /* 子要素の絶対配置のため */
+            position: relative;
             text-align: center; 
             background: var(--container-bg-color); 
             padding: 40px; 
@@ -44,16 +56,7 @@
             width: 100%; 
             transition: all 1.5s ease; 
         }
-        
-        /* ▼▼▼ サイトタイトルと起承転結表示のスタイルを追加 ▼▼▼ */
-        #site-title {
-            position: absolute;
-            top: 18px;
-            left: 25px;
-            font-size: 0.9em;
-            color: #aaa;
-            font-weight: 400;
-        }
+
         #act-display { 
             font-size: 1.2em; 
             color: #888; 
@@ -76,7 +79,6 @@
             color: var(--accent-color);
             transform: scale(1.2);
         }
-        /* ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲ */
 
         #title-display { 
             font-size: 1.5em; 
@@ -116,8 +118,9 @@
     </style>
 </head>
 <body>
+    <div id="site-title">物語メーカー</div>
+    
     <div class="container">
-        <div id="site-title">物語メーカー</div>
         <div id="title-display"></div>
         <div id="act-display"></div>
         <div id="story-log"></div>
@@ -135,6 +138,7 @@
     </div>
 
     <script>
+        // JavaScript部分に変更はありません
         const titleDisplayElem = document.getElementById('title-display');
         const actDisplayElem = document.getElementById('act-display');
         const storyLogElem = document.getElementById('story-log');
@@ -151,7 +155,7 @@
         let choiceCount = 0;
         const MAX_RETRIES = 3;
         
-        async function apiCallWithRetry(prompt, retries = MAX_RETRIES) { /* (変更なし) */
+        async function apiCallWithRetry(prompt, retries = MAX_RETRIES) {
             for (let i = 0; i < retries; i++) {
                 try {
                     const response = await fetch('/api/generate-text', {
@@ -172,7 +176,7 @@
             }
         }
         
-        async function updateTheme() { /* (変更なし) */
+        async function updateTheme() {
             try {
                 const response = await fetch('/api/generate-colors', {
                     method: 'POST',
@@ -198,8 +202,7 @@
             } catch (error) { console.error('テーマの適用中にエラーが発生しました:', error); }
         }
 
-        // ▼▼▼ 起承転結表示を更新する新しい関数 ▼▼▼
-        function updateActDisplay(activeIndex) { // 0:起, 1:承, 2:転, 3:結, -1:非表示
+        function updateActDisplay(activeIndex) {
             const acts = ['起', '承', '転', '結'];
             if (activeIndex === -1) {
                 actDisplayElem.style.display = 'none';
@@ -213,7 +216,7 @@
             actDisplayElem.innerHTML = html;
         }
 
-        document.addEventListener('DOMContentLoaded', async () => { /* (テーマ選択ロジックは変更なし) */
+        document.addEventListener('DOMContentLoaded', async () => {
             let availableThemes = JSON.parse(localStorage.getItem('availableStoryThemes'));
             if (!availableThemes || availableThemes.length === 0) {
                 availableThemes = [...masterThemes];
@@ -224,7 +227,7 @@
             localStorage.setItem('availableStoryThemes', JSON.stringify(availableThemes));
 
             loadingElem.style.display = 'block';
-            updateActDisplay(0); // ★「起」をアクティブに
+            updateActDisplay(0);
             loadingElem.textContent = `テーマ「${selectedTheme}」で物語の始まりを考えています...`;
             const initialPrompt = `# 役割: あなたは「${selectedTheme}」の作家です。\n# 指示: 物語の魅力的な「始まりの一文」を一つだけ生成してください。\n# 制約: 回答は必ず {"sentence": "生成された始まりの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 出力:`;
             const data = await apiCallWithRetry(initialPrompt);
@@ -239,7 +242,7 @@
             }
         });
 
-        async function proceedWithWord(word) { /* (変更なし) */
+        async function proceedWithWord(word) {
             document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
             submitWordBtn.disabled = true;
             userWordInput.disabled = true;
@@ -271,9 +274,7 @@
         }
 
         async function generateRecommendedWords() {
-            // ★ actDisplayElem.textContent の代わりに updateActDisplay を呼び出す
             updateActDisplay(choiceCount + 1);
-
             loadingElem.textContent = "物語の鍵となる単語を考えています...";
             loadingElem.style.display = 'block';
             let roleDescription = "", instruction = "";
@@ -288,7 +289,7 @@
             if (data) { updateUserInputArea(data); }
         }
 
-        async function generateSentenceFromWord(word) { /* (変更なし) */
+        async function generateSentenceFromWord(word) {
             loadingElem.textContent = `「${word}」から物語を紡いでいます...`;
             let roleDescription = "", instruction = "";
             switch (choiceCount) {
@@ -302,7 +303,7 @@
         }
 
         async function generateConclusion() {
-            updateActDisplay(-1); // ★ 起承転結表示を消す
+            updateActDisplay(-1);
             loadingElem.textContent = "物語の結末を考えています...";
             loadingElem.style.display = 'block';
             const finalPrompt = `# 役割: あなたは「${selectedTheme}」のスタイルを専門とする、偉大なフィナーレを創造する作家です。\n# 指示: 以下の「これまでの物語」のすべてを読み、感動的または、衝撃的、あるいは心に残るような、「締めの一文」を生成してください。\n# 制約: あなたの専門である「${selectedTheme}」の文体や雰囲気に合わせてください。回答は必ず {"conclusion_sentence": "締めの一文。"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: これまでの物語:\n${storyHistory.join('\n')}\n# 出力:`;
@@ -317,19 +318,18 @@
             showEnding();
         }
         
-        async function generateAndShowTitle() { /* (変更なし) */
+        async function generateAndShowTitle() {
             const titlePrompt = `# 役割: あなたは優れた編集者です。\n# 指示: 以下の物語に最もふさわしい、タイトルを生成してください。\n# 制約: タイトルは「${selectedTheme}」の雰囲気に合っている必要があります。回答は必ず {"title": "生成されたタイトル"} のJSON形式のみで、説明やマークダウンは一切含めないでください。\n# 入力: 物語:\n${storyHistory.join('\n')}\n# 出力:`;
             const data = await apiCallWithRetry(titlePrompt);
             titleDisplayElem.textContent = (data && data.title) ? `『${data.title}』` : `『無題の物語』`;
             titleDisplayElem.style.display = 'block';
         }
         
-        function addSentenceToLog(sentence) { /* (変更なし) */
+        function addSentenceToLog(sentence) { 
             const p = document.createElement('p'); p.textContent = sentence; storyLogElem.appendChild(p); storyLogElem.scrollTop = storyLogElem.scrollHeight; 
         }
 
         function showEnding() {
-            // ▼▼▼ コピーボタンを削除 ▼▼▼
             endOptionsContainer.innerHTML = `<button class="option-btn" onclick="location.reload()">新しい物語を始める</button>`;
             const endMark = document.createElement('p');
             endMark.textContent = "― 完 ―";
@@ -338,10 +338,8 @@
             endMark.style.marginTop = '2em';
             storyLogElem.appendChild(endMark);
         }
-
-        // ▼▼▼ copyStoryToClipboard 関数を削除 ▼▼▼
         
-        function updateUserInputArea(data) { /* (変更なし) */
+        function updateUserInputArea(data) {
             recommendOptions.innerHTML = '';
             userWordInput.value = '';
             const btn1 = document.createElement('button'); btn1.className = 'option-btn'; btn1.textContent = data.word1; btn1.onclick = () => proceedWithWord(data.word1);
@@ -352,7 +350,7 @@
         }
 
         submitWordBtn.addEventListener('click', () => proceedWithWord(userWordInput.value));
-        userWordInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { proceedWithWord(userWordInput.value); } });
+        userWordInput.addEventListener('keydown', (event) => { if (event.key === 'Enter') { proceedWithWord(userWord_input.value); } });
     </script>
 </body>
 </html>
